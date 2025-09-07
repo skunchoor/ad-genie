@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <title>AdGenie</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>AdGenie</h2>
+
+      <input id="title" placeholder="Product title" value="Leather Tote Bag" />
+      <textarea id="features" rows="4" placeholder="Key features..."></textarea>
+
+      <select id="tone">
+        <option value="professional">Professional</option>
+        <option value="playful">Playful</option>
+        <option value="luxurious">Luxurious</option>
+        <option value="minimal">Minimal</option>
+      </select>
+
+      <input id="keywords" placeholder="SEO keywords, comma separated" />
+      <input id="image" type="file" accept="image/*" />
+
+      <button id="generate">Generate</button>
+
+      <div id="results"></div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
