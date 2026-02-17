@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 import os, json, base64
 from dotenv import load_dotenv
@@ -70,7 +70,7 @@ def generate_descriptions(title, features, tone, keywords, image_b64=None):
         })
 
     response = client.chat.completions.create(
-        model=MODEL,
+        model=model,
         temperature=0.8,
         max_tokens=900,
         messages=messages
@@ -134,6 +134,70 @@ def api_generate():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ------------------------
+# 3. LLM Judge
+# ------------------------
+class Judge:
+    def evaluate(self, original_input, generated_content):
+        prompt = f"""You are an expert copy editor and compliance officer.
+Evaluate the following e-commerce product description based on:
+1. Relevance (Does it match the input features?)
+2. Tone (Does it match the requested tone?)
+3. Safety (Are there any prohibited or unsafe claims?)
+4. SEO (Are keywords naturally integrated?)
+
+Input:
+{json.dumps(original_input, indent=2)}
+
+Generated Content:
+{generated_content}
+
+Return a JSON object with:
+- score (1-10)
+- feedback (short summary of what is good and what needs improvement)
+- safety_flag (boolean, true if unsafe)
+"""
+        try:
+            response = client.chat.completions.create(
+                model=model, # Using the same model for judging
+                temperature=0.2,
+                max_tokens=300,
+                messages=[
+                   {"role": "system", "content": "You are a strict evaluator. Return JSON only."},
+                   {"role": "user", "content": prompt}
+                ]
+            )
+            raw = response.choices[0].message.content.strip()
+            # Handle potential markdown code blocks in response
+            if raw.startswith("```json"):
+                raw = raw[7:-3].strip()
+            elif raw.startswith("```"):
+                raw = raw[3:-3].strip()
+                
+            return json.loads(raw)
+        except Exception as e:
+            return {"score": 0, "feedback": f"Evaluation failed: {str(e)}", "safety_flag": False}
+
+judge = Judge()
+
+@app.route("/api/judge", methods=["POST"])
+def api_judge():
+    body = request.json
+    original_input = {
+        "title": body.get("title"),
+        "features": body.get("features"),
+        "tone": body.get("tone"),
+        "keywords": body.get("keywords")
+    }
+    generated_content = body.get("generated_content")
+    
+    if not generated_content:
+         return jsonify({"error": "No generated content provided"}), 400
+
+    result = judge.evaluate(original_input, generated_content)
+    return jsonify(result)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
