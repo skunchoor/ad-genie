@@ -4,10 +4,13 @@ import os, json, base64
 from dotenv import load_dotenv
 
 
+from flask_cors import CORS
+
 load_dotenv()
 
 
 app = Flask(__name__)
+CORS(app)
 
 
 # Configure OpenAI client
@@ -77,10 +80,18 @@ def generate_descriptions(title, features, tone, keywords, image_b64=None):
     )
 
     raw = response.choices[0].message.content.strip()
+    
+    # Strip markdown code blocks if present
+    if raw.startswith("```json"):
+        raw = raw[7:-3].strip()
+    elif raw.startswith("```"):
+        raw = raw[3:-3].strip()
+        
     try:
         return json.loads(raw)
     except Exception:
-        return {"options": [{"headline": "Option A", "body": raw, "cta": "Shop now"}]}
+        # If parsing fails, try to salvage or return raw text structure
+        return {"options": [{"headline": "Generated Description", "body": raw, "cta": "Check it out"}]}
 
 # ---------------- #
 # 1. HTML Form UI  #

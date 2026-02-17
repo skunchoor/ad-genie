@@ -51,8 +51,19 @@ document.getElementById("generate").addEventListener("click", async () => {
         // Add Judge Button
         const judgeBtn = document.createElement("button");
         judgeBtn.textContent = "Judge this Option";
-        judgeBtn.className = "judge-btn"; // You might want to style this
+        judgeBtn.className = "judge-btn";
         judgeBtn.style.marginTop = "10px";
+        judgeBtn.style.display = "block"; // Ensure it's on a new line
+
+        // Container for THIS option's judge results
+        const judgeResultDiv = document.createElement("div");
+        judgeResultDiv.style.marginTop = "10px";
+        judgeResultDiv.style.padding = "10px";
+        judgeResultDiv.style.border = "1px solid #333";
+        judgeResultDiv.style.borderRadius = "6px";
+        judgeResultDiv.style.background = "#1e293b";
+        judgeResultDiv.style.display = "none";
+
         judgeBtn.onclick = async () => {
           judgeBtn.textContent = "Judging...";
           judgeBtn.disabled = true;
@@ -67,14 +78,19 @@ document.getElementById("generate").addEventListener("click", async () => {
             });
             const judgeData = await judgeRes.json();
 
-            const judgeDiv = document.getElementById("judge-results");
-            judgeDiv.style.display = "block";
-            judgeDiv.innerHTML = `
-                    <h5>Judge's Feedback (Score: ${judgeData.score}/10)</h5>
-                    <p>${judgeData.feedback}</p>
+            // Fix [object Object] issue
+            let feedbackText = judgeData.feedback;
+            if (typeof feedbackText === 'object') {
+              feedbackText = JSON.stringify(feedbackText, null, 2);
+            }
+
+            judgeResultDiv.style.display = "block";
+            judgeResultDiv.innerHTML = `
+                    <h5 style="margin-top:0; color: #818cf8;">Judge's Score: ${judgeData.score}/10</h5>
+                    <p style="font-size: 0.9em; white-space: pre-wrap;">${feedbackText}</p>
                     ${judgeData.safety_flag ? '<strong style="color:red;">Safety Warning!</strong>' : ''}
                 `;
-            judgeDiv.scrollIntoView({ behavior: 'smooth' });
+            judgeResultDiv.scrollIntoView({ behavior: 'smooth' });
 
           } catch (e) {
             alert("Judge error: " + e.message);
@@ -84,6 +100,7 @@ document.getElementById("generate").addEventListener("click", async () => {
           }
         };
         div.appendChild(judgeBtn);
+        div.appendChild(judgeResultDiv);
 
         results.appendChild(div);
       });
