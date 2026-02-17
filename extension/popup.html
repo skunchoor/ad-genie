@@ -1,30 +1,35 @@
 <!doctype html>
 <html>
-  <head>
-    <title>AdGenie</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <div class="container">
-      <h2>AdGenie</h2>
 
-      <input id="title" placeholder="Product title" value="Leather Tote Bag" />
-      <textarea id="features" rows="4" placeholder="Key features..."></textarea>
+<head>
+  <title>AdGenie</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
 
-      <select id="tone">
-        <option value="professional">Professional</option>
-        <option value="playful">Playful</option>
-        <option value="luxurious">Luxurious</option>
-        <option value="minimal">Minimal</option>
-      </select>
+<body>
+  <div class="container">
+    <h2>AdGenie</h2>
 
-      <input id="keywords" placeholder="SEO keywords, comma separated" />
-      <input id="image" type="file" accept="image/*" />
+    <input id="title" placeholder="Product title" value="Leather Tote Bag" />
+    <textarea id="features" rows="4" placeholder="Key features..."></textarea>
 
-      <button id="generate">Generate</button>
+    <select id="tone">
+      <option value="professional">Professional</option>
+      <option value="playful">Playful</option>
+      <option value="luxurious">Luxurious</option>
+      <option value="minimal">Minimal</option>
+    </select>
+
+    <input id="keywords" placeholder="SEO keywords, comma separated" />
+    <button id="capture-btn" style="background: #e11d48; margin-bottom: 10px;">📸 Capture Screen</button>
+    <img id="screenshot-preview" style="width: 100%; display: none; margin-bottom: 10px; border: 1px solid #ccc;" />
+    <!-- <input id="image" type="file" accept="image/*" /> -->
+
+    <button id="generate">Generate</button>
 
     <div id="results"></div>
-    </div>
-    <script src="popup.js"></script>
-  </body>
+  </div>
+  <script src="popup.js"></script>
+</body>
+
 </html>

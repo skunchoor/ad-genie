@@ -7,6 +7,22 @@ async function toBase64(file) {
   });
 }
 
+// Screen Capture Logic
+let imageData = null;
+
+document.getElementById("capture-btn").addEventListener("click", () => {
+  chrome.tabs.captureVisibleTab(null, { format: "png" }, (dataUrl) => {
+    if (chrome.runtime.lastError) {
+      alert("Error capturing screen: " + chrome.runtime.lastError.message);
+      return;
+    }
+    imageData = dataUrl;
+    const imgPreview = document.getElementById("screenshot-preview");
+    imgPreview.src = dataUrl;
+    imgPreview.style.display = "block";
+  });
+});
+
 document.getElementById("generate").addEventListener("click", async () => {
   const title = document.getElementById("title").value;
   const features = document.getElementById("features").value
@@ -19,11 +35,8 @@ document.getElementById("generate").addEventListener("click", async () => {
     .map(k => k.trim())
     .filter(Boolean);
 
-  const imageFile = document.getElementById("image").files[0];
-  let imageData = null;
-  if (imageFile) {
-    imageData = await toBase64(imageFile); // full data:image/png;base64,... string
-  }
+  // Image data is already set if captured
+
 
   try {
     const res = await fetch("http://localhost:5000/api/generate", {
