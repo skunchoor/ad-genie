@@ -1,0 +1,214 @@
+from flask import Flask, render_template, request, jsonify
+from openai import OpenAI
+import os, json, base64
+from dotenv import load_dotenv
+
+
+from flask_cors import CORS
+
+load_dotenv()
+
+
+app = Flask(__name__)
+CORS(app)
+
+
+# Configure OpenAI client
+
+
+# Optional Azure setup
+if os.getenv("OPENAI_API_TYPE") == "azure":
+    client = OpenAI(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        base_url=f"{os.getenv('OPENAI_API_BASE')}/openai/deployments/{os.getenv('OPENAI_DEPLOYMENT')}",
+        default_query={"api-version": os.getenv("OPENAI_API_VERSION")},
+    )
+    model = os.getenv("OPENAI_DEPLOYMENT")
+elif os.getenv("OPENAI_API_TYPE") == "ollama":
+    client = OpenAI(
+        base_url="http://localhost:11434/v1",
+    )
+    model = "gpt-oss:20b"
+else:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    model = "gpt-4o-mini"
+
+
+# Prompt builder
+def build_prompt(title, features, tone, keywords=None):
+    return f"""You are AdGenie, an expert e-commerce copywriter.
+Write 3 distinct product descriptions for the product below.
+Each ~120-160 words, {tone} tone, persuasive, benefit-focused, skimmable paragraphs.
+Include a short headline and a 1-line CTA. Integrate SEO keywords naturally.
+Avoid fabricating specs. Do not include unsafe or prohibited items.
+
+
+Product title: {title}
+Key features (bullet-to-benefit):
+{chr(10).join(f'- {f}' for f in features)}
+SEO keywords: {', '.join(keywords) if keywords else 'n/a'}
+
+
+Return JSON with shape:
+{{
+    "options": [
+        {{"headline": string, "body": string, "cta": string}}
+    ]
+}}"""
+
+
+def generate_descriptions(title, features, tone, keywords, image_b64=None):
+    """Helper that talks to the model, used by both UI and API"""
+    user_prompt = build_prompt(title, features, tone, keywords)
+
+    messages = [
+        {"role": "system", "content": "You return STRICT JSON only."},
+        {"role": "user", "content": [{"type": "text", "text": user_prompt}]}
+    ]
+
+    if image_b64:
+        messages[1]["content"].append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/png;base64,{image_b64}"}
+        })
+
+    response = client.chat.completions.create(
+        model=model,
+        temperature=0.8,
+        max_tokens=900,
+        messages=messages
+    )
+
+    raw = response.choices[0].message.content.strip()
+    
+    # Strip markdown code blocks if present
+    if raw.startswith("```json"):
+        raw = raw[7:-3].strip()
+    elif raw.startswith("```"):
+        raw = raw[3:-3].strip()
+        
+    try:
+        return json.loads(raw)
+    except Exception:
+        # If parsing fails, try to salvage or return raw text structure
+        return {"options": [{"headline": "Generated Description", "body": raw, "cta": "Check it out"}]}
+
+# ---------------- #
+# 1. HTML Form UI  #
+# ---------------- #
+@app.route("/", methods=["GET", "POST"])
+def index():
+    data, err = None, None
+    if request.method == "POST":
+        title = request.form.get("title")
+        features = [f.strip("-• ") for f in request.form.get("features", "").split("\n") if f.strip()]
+        tone = request.form.get("tone")
+        keywords = [k.strip() for k in request.form.get("keywords", "").split(",") if k.strip()]
+        image_file = request.files.get("image")
+
+        user_prompt = build_prompt(title, features, tone, keywords)
+
+        image_b64 = None
+        if image_file:
+            image_b64 = base64.b64encode(image_file.read()).decode("utf-8")
+
+        try:
+            data = generate_descriptions(title, features, tone, keywords, image_b64)
+        except Exception as e:
+            err = str(e)
+
+    return render_template("index.html", data=data, err=err)
+
+
+# ------------------------
+# 2. JSON API (for extension)
+# ------------------------
+@app.route("/api/generate", methods=["POST"])
+def api_generate():
+    body = request.json
+    title = body.get("title")
+    features = body.get("features", [])
+    tone = body.get("tone")
+    keywords = body.get("keywords", [])
+    image_b64 = body.get("image")
+
+    # Allow inline base64 image string
+    if "image" in body and body["image"]:
+        if body["image"].startswith("data:image"):
+            # strip prefix like data:image/png;base64,
+            image_b64 = body["image"].split(",")[1]
+        else:
+            image_b64 = body["image"]
+
+    try:
+        result = generate_descriptions(title, features, tone, keywords, image_b64)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ------------------------
+# 3. LLM Judge
+# ------------------------
+class Judge:
+    def evaluate(self, original_input, generated_content):
+        prompt = f"""You are an expert copy editor and compliance officer.
+Evaluate the following e-commerce product description based on:
+1. Relevance (Does it match the input features?)
+2. Tone (Does it match the requested tone?)
+3. Safety (Are there any prohibited or unsafe claims?)
+4. SEO (Are keywords naturally integrated?)
+
+Input:
+{json.dumps(original_input, indent=2)}
+
+Generated Content:
+{generated_content}
+
+Return a JSON object with:
+- score (1-10)
+- feedback (short summary of what is good and what needs improvement)
+- safety_flag (boolean, true if unsafe)
+"""
+        try:
+            response = client.chat.completions.create(
+                model=model, # Using the same model for judging
+                temperature=0.2,
+                max_tokens=300,
+                messages=[
+                   {"role": "system", "content": "You are a strict evaluator. Return JSON only."},
+                   {"role": "user", "content": prompt}
+                ]
+            )
+            raw = response.choices[0].message.content.strip()
+            # Handle potential markdown code blocks in response
+            if raw.startswith("```json"):
+                raw = raw[7:-3].strip()
+            elif raw.startswith("```"):
+                raw = raw[3:-3].strip()
+                
+            return json.loads(raw)
+        except Exception as e:
+            return {"score": 0, "feedback": f"Evaluation failed: {str(e)}", "safety_flag": False}
+
+judge = Judge()
+
+@app.route("/api/judge", methods=["POST"])
+def api_judge():
+    body = request.json
+    original_input = {
+        "title": body.get("title"),
+        "features": body.get("features"),
+        "tone": body.get("tone"),
+        "keywords": body.get("keywords")
+    }
+    generated_content = body.get("generated_content")
+    
+    if not generated_content:
+         return jsonify({"error": "No generated content provided"}), 400
+
+    result = judge.evaluate(original_input, generated_content)
+    return jsonify(result)
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)

@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>AdGenie</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>AdGenie</h1>
+        <form method="post" enctype="multipart/form-data">
+            <label>Product title</label>
+            <input name="title" value="Leather Tote Bag" />
+
+            <label>Key features (one per line)</label>
+            <textarea name="features" rows="5">- Full-grain leather
+- Padded laptop sleeve
+- YKK zippers</textarea>
+
+            <label>Tone</label>
+            <select name="tone">
+                <option value="professional">Professional</option>
+                <option value="playful">Playful</option>
+                <option value="luxurious">Luxurious</option>
+                <option value="minimal">Minimal</option>
+            </select>
+
+            <label>SEO keywords (comma-separated)</label>
+            <input name="keywords" value="leather tote, work bag, laptop bag" />
+
+            <label>Product image</label>
+            <input type="file" name="image" accept="image/*" />
+
+            <button type="submit">Generate</button>
+        </form>
+
+
+
+        {% if err %}<p style="color:red">{{err}}</p>{% endif %}
+
+
+        {% if data %}
+        <h2>Results</h2>
+        {% for o in data.options %}
+        <div class="card">
+            <h3>{{o.headline}}</h3>
+            <p>{{o.body}}</p>
+            <strong>{{o.cta}}</strong>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+</body>
+
+</html>
