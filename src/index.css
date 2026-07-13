@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --color-accent-gold: #d4a373;
+  --color-accent-blue: #6096b4;
+  --color-bg-dark: #0b1220;
+  --color-surface-dark: #121a2b;
+  --color-text-body: #e6ddc4;
+  --color-text-muted: #9e9589;
+}
+
+body {
+  @apply bg-bg-dark text-text-body font-sans antialiased;
+  margin: 0;
+}
+
+/* Base custom styles for our nodes */
+.react-flow__node {
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  background: var(--color-surface-dark);
+  border: 1px solid #4a433d;
+  color: var(--color-text-body);
+  padding: 0;
+  overflow: hidden;
+}
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background-color: var(--color-accent-blue);
+  border-color: var(--color-surface-dark);
+}
+
+/* React Flow background override */
+.react-flow__background {
+  background-color: var(--color-bg-dark);
+}
+
+/* Sleek themed scrollbars instead of fully hidden */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b transparent;
+}
+
