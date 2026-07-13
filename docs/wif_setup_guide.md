@@ -44,6 +44,21 @@ gcloud projects add-iam-policy-binding $PROJECT_ID `
 gcloud projects add-iam-policy-binding $PROJECT_ID `
   --member="serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" `
   --role="roles/iam.serviceAccountUser"
+
+# Allow it to use Artifact Registry (required for Cloud Run source deploys)
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+  --member="serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" `
+  --role="roles/artifactregistry.admin"
+
+# Allow it to submit builds to Cloud Build
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+  --member="serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" `
+  --role="roles/cloudbuild.builds.editor"
+
+# Allow it to store build logs and sources in Cloud Storage
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+  --member="serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" `
+  --role="roles/storage.admin"
 ```
 
 ## 6. Create the Workload Identity Pool
@@ -107,3 +122,22 @@ gcloud iam workload-identity-pools providers describe "github-provider" `
    - `WIF_PROVIDER` (paste the long provider name string)
    - `WIF_SERVICE_ACCOUNT` (paste the email address)
 4. I have already updated your `deploy-backend.yml` workflow to use these variables!
+
+---
+
+## 10. Security Cleanup (Optional)
+
+If you are not using GitHub Actions anymore or just want to remove these federated credentials for security purposes, you can permanently delete the Workload Identity Pool and the Service Account by running these commands:
+
+```powershell
+# Delete the Workload Identity Pool (this automatically deletes the provider inside it)
+gcloud iam workload-identity-pools delete "github-pool" `
+  --project=$PROJECT_ID `
+  --location="global" `
+  --quiet
+
+# Delete the Service Account
+gcloud iam service-accounts delete "${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" `
+  --project=$PROJECT_ID `
+  --quiet
+```
