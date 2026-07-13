@@ -10,6 +10,10 @@ on:
       - 'uv.lock'
       - 'Dockerfile'
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
