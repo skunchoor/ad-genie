@@ -12,6 +12,7 @@ import InputNode from './components/nodes/InputNode';
 import GeneratorNode from './components/nodes/GeneratorNode';
 import JudgeNode from './components/nodes/JudgeNode';
 import OutputNode from './components/nodes/OutputNode';
+import ExtensionModal from './components/ExtensionModal';
 
 import { mockInputProduct, mockGeneratedDescriptions, mockJudgeEvaluation } from './mockData';
 
@@ -58,6 +59,7 @@ const initialEdges = [
 function App() {
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
+  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
 
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -144,7 +146,27 @@ function App() {
             </div>
           </div>
         </div>
+
+        {/* Action Buttons */}
+        <div>
+          <button 
+            onClick={() => setIsExtensionModalOpen(true)}
+            className="bg-[#1e293b] hover:bg-[#2d3748] text-white text-sm font-medium py-1.5 px-4 rounded-lg flex items-center gap-2 transition-colors border border-white/10"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.29 7 12 12 20.71 7"></polyline>
+              <line x1="12" y1="22" x2="12" y2="12"></line>
+            </svg>
+            Add to Browser
+          </button>
+        </div>
       </header>
+
+      <ExtensionModal 
+        isOpen={isExtensionModalOpen} 
+        onClose={() => setIsExtensionModalOpen(false)} 
+      />
 
       <div className="flex-1 relative">
         <div className="absolute top-4 left-4 z-10 bg-[#121a2b] p-4 rounded-xl shadow-lg border border-[#1e293b] max-w-sm">
