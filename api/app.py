@@ -151,6 +151,10 @@ judge = Judge()
 # API Endpoints
 # ------------------------
 
+@app.get("/")
+async def root():
+    return {"message": "AdGenie API is successfully running on Vercel!"}
+
 class GenerateRequest(BaseModel):
     title: str
     features: List[str] = []
