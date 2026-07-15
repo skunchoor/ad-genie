@@ -14,7 +14,7 @@ app = FastAPI(title="AdGenie API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://skunchoor.github.io"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

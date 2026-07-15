@@ -39,7 +39,7 @@ document.getElementById("generate").addEventListener("click", async () => {
 
 
   try {
-    const res = await fetch("http://localhost:5000/api/generate", {
+    const res = await fetch("https://ad-genie-three.vercel.app/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -81,7 +81,7 @@ document.getElementById("generate").addEventListener("click", async () => {
           judgeBtn.textContent = "Judging...";
           judgeBtn.disabled = true;
           try {
-            const judgeRes = await fetch("http://localhost:5000/api/judge", {
+            const judgeRes = await fetch("https://ad-genie-three.vercel.app/api/judge", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

@@ -76,32 +76,72 @@ function App() {
     []
   );
 
-  const handleRunGeneration = useCallback(() => {
-    // Set generator node to running
-    setNodes((nds) =>
-      nds.map((n) => {
-        if (n.id === 'gen-1') return { ...n, data: { ...n.data, isRunning: true } };
-        return n;
-      })
-    );
+  const handleRunGeneration = useCallback(async () => {
+    let inputData = null;
 
-    // Simulate network delay
-    setTimeout(() => {
+    // Set generator node to running and reset others
+    setNodes((nds) => {
+      const inputNode = nds.find(n => n.id === 'input-1');
+      inputData = inputNode ? inputNode.data : {};
+      
+      return nds.map((n) => {
+        if (n.id === 'gen-1') return { ...n, data: { ...n.data, isRunning: true } };
+        if (n.id === 'out-1') return { ...n, data: { ...n.data, descriptions: null } };
+        if (n.id === 'judge-1') return { ...n, data: { ...n.data, evaluation: null } };
+        return n;
+      });
+    });
+
+    if (!inputData) return;
+
+    try {
+      const { title, features, tone, keywords } = inputData;
+      
+      // Call Generation API
+      const res = await fetch("https://ad-genie-three.vercel.app/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, features, tone, keywords, image: null })
+      });
+      const data = await res.json();
+      
       setNodes((nds) =>
         nds.map((n) => {
-          if (n.id === 'gen-1') {
-            return { ...n, data: { ...n.data, isRunning: false } };
-          }
-          if (n.id === 'out-1') {
-            return { ...n, data: { ...n.data, descriptions: mockGeneratedDescriptions } };
-          }
-          if (n.id === 'judge-1') {
-            return { ...n, data: { ...n.data, evaluation: mockJudgeEvaluation } };
-          }
+          if (n.id === 'gen-1') return { ...n, data: { ...n.data, isRunning: false } };
+          if (n.id === 'out-1') return { ...n, data: { ...n.data, descriptions: data } };
           return n;
         })
       );
-    }, 1500);
+
+      // Call Judge API automatically on the first generated option
+      if (data.options && data.options.length > 0) {
+        const firstOption = data.options[0];
+        const judgeRes = await fetch("https://ad-genie-three.vercel.app/api/judge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title, features, tone, keywords,
+            generated_content: `Headline: ${firstOption.headline}\nBody: ${firstOption.body}\nCTA: ${firstOption.cta}`
+          })
+        });
+        const judgeData = await judgeRes.json();
+        
+        setNodes((nds) =>
+          nds.map((n) => {
+            if (n.id === 'judge-1') return { ...n, data: { ...n.data, evaluation: judgeData } };
+            return n;
+          })
+        );
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id === 'gen-1') return { ...n, data: { ...n.data, isRunning: false } };
+          return n;
+        })
+      );
+    }
   }, []);
 
   // Pass down the function to the generator node
