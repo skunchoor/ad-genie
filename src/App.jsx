@@ -103,7 +103,16 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, features, tone, keywords, image: null })
       });
+      
+      if (!res.ok) {
+        throw new Error(`API Error: ${res.status} - ${res.statusText}`);
+      }
+
       const data = await res.json();
+      
+      if (!data || !data.options) {
+        throw new Error("Invalid response from API (missing options array)");
+      }
       
       setNodes((nds) =>
         nds.map((n) => {
