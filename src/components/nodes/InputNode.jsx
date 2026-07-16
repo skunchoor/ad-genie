@@ -1,17 +1,29 @@
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function InputNode({ data }) {
+export default function InputNode({ id, data }) {
   const [image, setImage] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
+  const { updateNodeData } = useReactFlow();
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
-      reader.onload = (e) => setImage(e.target.result);
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        setImage(dataUrl);
+        // Extract the base64 part to send to the API
+        const base64 = dataUrl.split(',')[1] || null;
+        updateNodeData(id, { image: base64 });
+      };
       reader.readAsDataURL(e.target.files[0]);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setImage(null);
+    updateNodeData(id, { image: null });
   };
 
   return (
@@ -42,7 +54,7 @@ export default function InputNode({ data }) {
                   onClick={() => setShowPopup(true)}
                 />
                 <button 
-                  onClick={() => setImage(null)}
+                  onClick={handleRemoveImage}
                   className="text-xs text-red-400 hover:text-red-300 underline font-medium"
                 >
                   Remove

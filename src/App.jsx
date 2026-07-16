@@ -95,13 +95,13 @@ function App() {
     if (!inputData) return;
 
     try {
-      const { title, features, tone, keywords } = inputData;
+      const { title, features, tone, keywords, image } = inputData;
       
       // Call Generation API
       const res = await fetch("https://ad-genie-three.vercel.app/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, features, tone, keywords, image: null })
+        body: JSON.stringify({ title, features, tone, keywords, image: image || null })
       });
       
       if (!res.ok) {
