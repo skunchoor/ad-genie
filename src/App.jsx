@@ -135,7 +135,7 @@ function App() {
                  setNodes((nds) =>
                    nds.map((n) => {
                      if (n.id === 'out-1') {
-                       return { ...n, data: { ...n.data, descriptions: { options: [...allOptions] } } };
+                       return { ...n, data: { ...n.data, descriptions: { options: [...allOptions] }, image: image || null } };
                      }
                      return n;
                    })

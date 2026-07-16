@@ -73,8 +73,12 @@ export default function OutputNode({ data }) {
                 </div>
               </header>
               <div className="max-w-6xl mx-auto px-8 py-16 flex flex-col md:flex-row gap-16 items-center">
-                <div className="w-full md:w-1/2 bg-gray-200 aspect-square rounded-3xl flex items-center justify-center text-gray-400 text-lg border border-gray-300 shadow-inner">
-                  Product Image Placeholder
+                <div className="w-full md:w-1/2 aspect-square rounded-3xl flex items-center justify-center text-gray-400 text-lg overflow-hidden border border-gray-300 shadow-inner bg-gray-200">
+                  {data.image ? (
+                    <img src={`data:image/jpeg;base64,${data.image}`} alt="Product Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    "Product Image Placeholder"
+                  )}
                 </div>
                 <div className="w-full md:w-1/2 flex flex-col items-start">
                   <span className="text-xs text-indigo-600 font-black uppercase tracking-[0.2em] mb-4">New Arrival</span>
