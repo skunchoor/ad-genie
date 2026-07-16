@@ -108,40 +108,77 @@ function App() {
         throw new Error(`API Error: ${res.status} - ${res.statusText}`);
       }
 
-      const data = await res.json();
-      
-      if (!data || !data.options) {
-        throw new Error("Invalid response from API (missing options array)");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let allOptions = [];
+      let optionsReceived = 0;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop(); // Keep the incomplete line in the buffer
+        
+        for (const line of lines) {
+           if (line.startsWith("data: ")) {
+              const dataStr = line.slice(6);
+              if (dataStr.trim() === "[DONE]") continue;
+              
+              try {
+                 const opt = JSON.parse(dataStr);
+                 allOptions.push(opt);
+                 
+                 // Progressive UI Update
+                 setNodes((nds) =>
+                   nds.map((n) => {
+                     if (n.id === 'out-1') {
+                       return { ...n, data: { ...n.data, descriptions: { options: [...allOptions] } } };
+                     }
+                     return n;
+                   })
+                 );
+
+                 // Trigger judge on the FIRST option only
+                 if (optionsReceived === 0) {
+                     optionsReceived++;
+                     // Call Judge API automatically on the first generated option
+                     fetch("https://ad-genie-three.vercel.app/api/judge", {
+                       method: "POST",
+                       headers: { "Content-Type": "application/json" },
+                       body: JSON.stringify({
+                         title, features, tone, keywords,
+                         generated_content: `Headline: ${opt.headline}\nBody: ${opt.body}\nCTA: ${opt.cta}`
+                       })
+                     })
+                     .then(judgeRes => judgeRes.json())
+                     .then(judgeData => {
+                       setNodes((nds) =>
+                         nds.map((n) => {
+                           if (n.id === 'judge-1') return { ...n, data: { ...n.data, evaluation: judgeData } };
+                           return n;
+                         })
+                       );
+                     });
+                 } else {
+                     optionsReceived++;
+                 }
+              } catch(e) {
+                 console.error("Failed to parse chunk", e);
+              }
+           }
+        }
       }
       
+      // Generation is completely finished
       setNodes((nds) =>
         nds.map((n) => {
           if (n.id === 'gen-1') return { ...n, data: { ...n.data, isRunning: false } };
-          if (n.id === 'out-1') return { ...n, data: { ...n.data, descriptions: data } };
           return n;
         })
       );
-
-      // Call Judge API automatically on the first generated option
-      if (data.options && data.options.length > 0) {
-        const firstOption = data.options[0];
-        const judgeRes = await fetch("https://ad-genie-three.vercel.app/api/judge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title, features, tone, keywords,
-            generated_content: `Headline: ${firstOption.headline}\nBody: ${firstOption.body}\nCTA: ${firstOption.cta}`
-          })
-        });
-        const judgeData = await judgeRes.json();
-        
-        setNodes((nds) =>
-          nds.map((n) => {
-            if (n.id === 'judge-1') return { ...n, data: { ...n.data, evaluation: judgeData } };
-            return n;
-          })
-        );
-      }
     } catch (error) {
       console.error("API Error:", error);
       setNodes((nds) =>

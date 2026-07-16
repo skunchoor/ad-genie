@@ -9,15 +9,41 @@ export default function InputNode({ id, data }) {
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        setImage(dataUrl);
-        // Extract the base64 part to send to the API
-        const base64 = dataUrl.split(',')[1] || null;
-        updateNodeData(id, { image: base64 });
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          // Compress the image to a max of 512x512
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 512;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height && width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Export as compressed JPEG
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setImage(compressedDataUrl);
+          
+          // Extract the base64 part to send to the API
+          const base64 = compressedDataUrl.split(',')[1] || null;
+          updateNodeData(id, { image: base64 });
+        };
+        img.src = event.target.result;
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   };
 
