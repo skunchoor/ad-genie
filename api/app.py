@@ -44,7 +44,7 @@ else:
 # 2. Gemini (For Evaluation/Judge)
 # Relies on GEMINI_API_KEY environment variable implicitly or explicitly
 gemini_client = genai.Client()
-gemini_model = "gemini-2.5-flash"
+gemini_model = "gemini-flash-latest"
 
 
 # ------------------------
