@@ -2,6 +2,7 @@
 
 AdGenie is an AI-powered browser extension and web tool designed for e-commerce sellers. It instantly generates engaging, persuasive, and SEO-friendly product descriptions, and includes an **LLM Judge** to evaluate the quality and safety of the generated content.
 
+
 ## Architecture
 
 The system consists of a browser extension frontend that communicates with a local Python/Flask backend, which in turn leverages OpenAI's models for content generation and evaluation.
@@ -31,6 +32,7 @@ graph TD
 - **Generate Descriptions**: Create multiple options based on product title, features, tone, and keywords.
 - **Image Support**: Upload product images to enhance generation (multimodal).
 - **LLM Judge**: Automatically evaluate generated descriptions for relevance, tone, safety, and SEO, giving a score out of 10.
+
 
 ## Setup
 
