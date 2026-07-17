@@ -1,0 +1,32 @@
+name: Organization MLOps & Governance Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+
+jobs:
+  # 1. Pull Request Gatekeeper Quality Gate
+  gatekeeper:
+    if: github.event_name == 'pull_request'
+    uses: skunchoor/traffic-light-governance/.github/workflows/reusable-gatekeeper.yml@main
+    with:
+      python_version: '3.11'
+      test_command: 'PYTHONPATH=. uv run pytest tests/ --junitxml=test-results.xml || true'
+      run_security_scans: true
+    secrets: inherit
+
+  # 2. Unified CI/CD Deployment & MLflow Promotion Pipeline
+  deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    uses: skunchoor/traffic-light-governance/.github/workflows/reusable-ci-cd-pipeline.yml@main
+    with:
+      workflow_name: 'Ad Genie Pipeline'
+      service_name: 'Ad Genie API'
+      model_name: 'Ad Genie Model'
+      environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      run_databricks_deploy: false
+      run_azure_deploy: false
+    secrets: inherit
