@@ -6,7 +6,6 @@ AdGenie is an AI-powered browser extension and web tool designed for e-commerce 
 
 The system consists of a browser extension frontend that communicates with a local Python/Flask backend, which in turn leverages OpenAI's models for content generation and evaluation.
 
-
 ```mermaid
 graph TD
     subgraph "Client Side"
