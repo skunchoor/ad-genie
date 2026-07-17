@@ -34,6 +34,7 @@ graph TD
 - **LLM Judge**: Automatically evaluate generated descriptions for relevance, tone, safety, and SEO, giving a score out of 10.
 
 
+
 ## Setup
 
 ### Prerequisites
